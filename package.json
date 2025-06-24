@@ -1,0 +1,61 @@
+{
+  "name": "shukatsushoji-mensetsu",
+  "version": "1.0.0",
+  "description": "就活商事 模擬面接 - AI面接官による本格模擬面接サービス",
+  "type": "module",
+  "private": true,
+  "homepage": "https://shukatsushoji-mensetsu.netlify.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/shukatsushoji-mensetsu.git"
+  },
+  "keywords": [
+    "就活",
+    "面接練習",
+    "AI",
+    "模擬面接",
+    "就職活動",
+    "面接対策",
+    "React",
+    "TypeScript",
+    "Supabase"
+  ],
+  "author": "就活商事くん",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.20.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "terser": "^5.36.0",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

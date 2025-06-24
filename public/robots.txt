@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# サイトマップの場所
+Sitemap: https://your-domain.com/sitemap.xml
+
+# クロール制限
+Crawl-delay: 1
+
+# 除外するページ
+Disallow: /debug
+Disallow: /admin
+Disallow: /auth/callback
