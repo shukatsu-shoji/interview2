@@ -21,7 +21,13 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Screen, InterviewSettings, InterviewQuestion, InterviewSession } from './types/interview';
-import { saveInterviewSession, loadInterviewSession, clearInterviewSession, enableAutoSave } from './services/sessionManager';
+import { 
+  saveInterviewSession, 
+  loadInterviewSession, 
+  clearInterviewSession, 
+  enableAutoSave,
+  setupBrowserCloseCleanup 
+} from './services/sessionManager';
 import { useAuth } from './hooks/useAuth';
 
 function AppContent() {
@@ -31,12 +37,22 @@ function AppContent() {
   const [sessionRecovered, setSessionRecovered] = useState(false);
   const { user, loading } = useAuth();
 
-  // Load session on mount with enhanced recovery
+  // ユーザー変更時のクリーンアップとセッション復元
   useEffect(() => {
     if (user && !loading) {
-      const savedSession = loadInterviewSession();
+      console.log('User authenticated, checking for saved session:', user.id);
+      
+      // 前のユーザーのデータをクリア（念のため）
+      const currentUserId = localStorage.getItem('currentUserId');
+      if (currentUserId && currentUserId !== user.id) {
+        console.log('Different user detected, clearing previous session');
+        clearInterviewSession(currentUserId);
+      }
+      
+      // 現在のユーザーのセッションを復元
+      const savedSession = loadInterviewSession(user.id);
       if (savedSession) {
-        console.log('Recovering session:', savedSession);
+        console.log('Recovering session for user:', user.id, savedSession);
         setCurrentScreen('interview');
         setInterviewSettings(savedSession.settings);
         setInterviewQuestions(savedSession.questions);
@@ -46,11 +62,32 @@ function AppContent() {
         setTimeout(() => {
           alert('前回の面接セッションを復元しました。続きから始められます。');
         }, 1000);
+      } else {
+        // セッションがない場合はホーム画面に
+        setCurrentScreen('home');
+        setInterviewSettings(null);
+        setInterviewQuestions([]);
+        setSessionRecovered(false);
       }
+    } else if (!loading && !user) {
+      // ログアウト時の処理
+      console.log('User logged out, resetting app state');
+      setCurrentScreen('home');
+      setInterviewSettings(null);
+      setInterviewQuestions([]);
+      setSessionRecovered(false);
     }
   }, [user, loading]);
 
-  // Enhanced session saving with auto-save
+  // ブラウザ閉じ時のクリーンアップ設定
+  useEffect(() => {
+    if (user) {
+      const cleanup = setupBrowserCloseCleanup(user.id);
+      return cleanup;
+    }
+  }, [user]);
+
+  // Enhanced session saving with auto-save (ユーザー固有)
   useEffect(() => {
     if (currentScreen === 'interview' && interviewSettings && user) {
       const session: InterviewSession = {
@@ -60,19 +97,20 @@ function AppContent() {
         isCompleted: false,
         startTime: interviewQuestions[0]?.timestamp || Date.now(),
         lastUpdated: Date.now(),
-        version: '3.0' // Phase 3 version
+        version: '3.0', // Phase 3 version
+        userId: user.id
       };
       
-      saveInterviewSession(session);
+      saveInterviewSession(session, user.id);
       
       // Enable auto-save every 30 seconds
-      const cleanup = enableAutoSave(session, 30000);
+      const cleanup = enableAutoSave(session, user.id, 30000);
       
       return cleanup;
     }
   }, [currentScreen, interviewSettings, interviewQuestions, user]);
 
-  // Handle browser beforeunload event
+  // Handle browser beforeunload event (ユーザー固有)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (currentScreen === 'interview' && interviewQuestions.length > 0) {
@@ -85,7 +123,7 @@ function AppContent() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentScreen, interviewQuestions.length]);
 
-  // Handle visibility change (tab switching)
+  // Handle visibility change (tab switching) (ユーザー固有)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && currentScreen === 'interview' && user) {
@@ -98,9 +136,10 @@ function AppContent() {
             isCompleted: false,
             startTime: interviewQuestions[0]?.timestamp || Date.now(),
             lastUpdated: Date.now(),
-            version: '3.0'
+            version: '3.0',
+            userId: user.id
           };
-          saveInterviewSession(session);
+          saveInterviewSession(session, user.id);
         }
       }
     };
@@ -122,7 +161,10 @@ function AppContent() {
       if (!confirmed) return;
     }
     
-    clearInterviewSession();
+    // ユーザー固有のセッションをクリア
+    if (user) {
+      clearInterviewSession(user.id);
+    }
     setCurrentScreen('home');
     setInterviewSettings(null);
     setInterviewQuestions([]);
@@ -138,12 +180,18 @@ function AppContent() {
 
   const handleInterviewComplete = (questions: InterviewQuestion[]) => {
     setInterviewQuestions(questions);
-    clearInterviewSession();
+    // 面接完了時にセッションをクリア
+    if (user) {
+      clearInterviewSession(user.id);
+    }
     setCurrentScreen('result');
   };
 
   const handleNewInterview = () => {
-    clearInterviewSession();
+    // ユーザー固有のセッションをクリア
+    if (user) {
+      clearInterviewSession(user.id);
+    }
     setCurrentScreen('home');
     setInterviewSettings(null);
     setInterviewQuestions([]);

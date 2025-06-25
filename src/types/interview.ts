@@ -31,6 +31,7 @@ export interface InterviewSession {
   startTime: number;
   lastUpdated?: number;
   version?: string;
+  userId?: string; // ユーザー固有のセッション管理用
   conversationQuality?: 'shallow' | 'moderate' | 'deep';
   coveredTopics?: string[];
   interviewMetrics?: InterviewMetrics;
