@@ -13,7 +13,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     // 本番環境では email confirmation を有効にする
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // ローカル開発環境での設定を追加
+    debug: process.env.NODE_ENV === 'development'
+  },
+  // ローカル開発環境でのリクエスト設定
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-web'
+    }
   }
 });
 
@@ -31,6 +39,12 @@ if (process.env.NODE_ENV === 'production') {
   if (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1')) {
     console.error('🚨 Development Supabase URL detected in production!');
   }
+} else {
+  // 開発環境での設定確認
+  console.log('Development Supabase configuration loaded');
+  console.log('Make sure your Supabase project is configured for local development:');
+  console.log('1. Site URL: http://localhost:5173');
+  console.log('2. Redirect URLs: http://localhost:5173/auth/callback');
 }
 
 // Database types

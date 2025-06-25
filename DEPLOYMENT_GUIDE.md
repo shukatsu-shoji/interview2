@@ -19,16 +19,41 @@
    - [Supabase Dashboard](https://supabase.com/dashboard) にアクセス
    - 「Shukatsu Shoji Mogimensetsu」プロジェクトを選択
 
-2. **Authentication設定の変更**
+2. **Authentication設定の変更（ローカル開発用も含む）**
    - Settings > Authentication に移動
-   - **Email confirmation を有効化**
-   - Site URL: `https://your-domain.com`
-   - Redirect URLs: `https://your-domain.com/auth/callback`
+   - **Site URL の設定:**
+     - 開発用: `http://localhost:5173`
+     - 本番用: `https://your-domain.com`
+   - **Redirect URLs の設定:**
+     - 開発用: `http://localhost:5173/auth/callback`
+     - 本番用: `https://your-domain.com/auth/callback`
+   - **Email confirmation を有効化**（本番環境のみ）
 
 3. **環境変数の確認**
    - Settings > API から以下を確認:
      - `Project URL` → `VITE_SUPABASE_URL`
      - `anon public` → `VITE_SUPABASE_ANON_KEY`
+
+#### 🚨 ローカル開発エラーの解決方法
+
+現在発生している「Session from session_id claim in JWT does not exist」エラーを解決するには：
+
+1. **Supabase Dashboard で以下を設定:**
+   - Authentication > Settings
+   - Site URL: `http://localhost:5173` を追加
+   - Redirect URLs: `http://localhost:5173/auth/callback` を追加
+
+2. **既存のセッションをクリア:**
+   - ブラウザの開発者ツールを開く
+   - Application > Local Storage > localhost:5173 を選択
+   - すべてのキーを削除
+   - Session Storage も同様にクリア
+
+3. **ブラウザを完全に再起動**
+
+4. **新規アカウントでテスト:**
+   - 新しいメールアドレスでサインアップ
+   - メール確認リンクをクリック（開発環境では確認不要の場合もあり）
 
 #### 2. ドメイン・SSL設定
 **重要度: 🔴 必須**
@@ -111,15 +136,20 @@ vercel --prod
 
 ### よくある問題と解決方法
 
-1. **メール認証が届かない**
+1. **「Session from session_id claim in JWT does not exist」エラー**
+   - Supabase Dashboard で Site URL と Redirect URLs を正しく設定
+   - ブラウザのローカルストレージとセッションストレージをクリア
+   - ブラウザを完全に再起動
+
+2. **メール認証が届かない**
    - Supabaseの Authentication > Settings でメール設定確認
    - 迷惑メールフォルダを確認
 
-2. **API接続エラー**
+3. **API接続エラー**
    - 環境変数が正しく設定されているか確認
    - Supabase URLとAnon Keyの形式確認
 
-3. **ビルドエラー**
+4. **ビルドエラー**
    - `npm install` でパッケージを再インストール
    - Node.js バージョンを18以上に更新
 

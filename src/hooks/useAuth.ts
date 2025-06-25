@@ -23,8 +23,9 @@ export const useAuth = (): AuthState => {
           
           // Check for invalid refresh token errors and clear session
           if (error.message?.includes('Invalid Refresh Token') || 
-              error.message?.includes('Refresh Token Not Found')) {
-            console.log('Invalid refresh token detected, clearing session...');
+              error.message?.includes('Refresh Token Not Found') ||
+              error.message?.includes('Session from session_id claim in JWT does not exist')) {
+            console.log('Invalid or expired session detected, clearing session...');
             await supabase.auth.signOut();
             setSession(null);
             setUser(null);
@@ -36,11 +37,12 @@ export const useAuth = (): AuthState => {
       } catch (error) {
         console.error('Error in getSession:', error);
         
-        // Also handle caught errors that might contain refresh token issues
+        // Also handle caught errors that might contain session issues
         if (error instanceof Error && 
             (error.message?.includes('Invalid Refresh Token') || 
-             error.message?.includes('Refresh Token Not Found'))) {
-          console.log('Invalid refresh token detected in catch, clearing session...');
+             error.message?.includes('Refresh Token Not Found') ||
+             error.message?.includes('Session from session_id claim in JWT does not exist'))) {
+          console.log('Invalid session detected in catch, clearing session...');
           await supabase.auth.signOut();
           setSession(null);
           setUser(null);
@@ -85,6 +87,13 @@ export const useAuth = (): AuthState => {
           localStorage.removeItem('currentUserId');
         }
         
+        // トークンエラーの処理
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.log('Token refresh failed, clearing session');
+          setSession(null);
+          setUser(null);
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -123,60 +132,85 @@ const clearUserInterviewData = (userId: string) => {
 // 認証関連のユーティリティ関数
 export const authHelpers = {
   signIn: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { data: null, error };
+    }
   },
 
   signUp: async (email: string, password: string) => {
-    // 本番環境では適切なリダイレクトURLを設定
-    const redirectTo = process.env.NODE_ENV === 'production' 
-      ? `${window.location.origin}/auth/callback`
-      : `${window.location.origin}/auth/callback`;
+    try {
+      // 開発環境と本番環境で適切なリダイレクトURLを設定
+      const redirectTo = process.env.NODE_ENV === 'production' 
+        ? `${window.location.origin}/auth/callback`
+        : `http://localhost:5173/auth/callback`;
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectTo
-      }
-    });
-    return { data, error };
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectTo
+        }
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { data: null, error };
+    }
   },
 
   signOut: async () => {
-    // ログアウト前に現在のユーザーIDを取得
-    const currentUserId = localStorage.getItem('currentUserId');
-    
-    const { error } = await supabase.auth.signOut();
-    
-    // ログアウト成功時に面接データをクリア
-    if (!error && currentUserId) {
-      clearUserInterviewData(currentUserId);
+    try {
+      // ログアウト前に現在のユーザーIDを取得
+      const currentUserId = localStorage.getItem('currentUserId');
+      
+      const { error } = await supabase.auth.signOut();
+      
+      // ログアウト成功時に面接データをクリア
+      if (!error && currentUserId) {
+        clearUserInterviewData(currentUserId);
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return { error };
     }
-    
-    return { error };
   },
 
   resetPassword: async (email: string) => {
-    // 本番環境では適切なリダイレクトURLを設定
-    const redirectTo = process.env.NODE_ENV === 'production' 
-      ? `${window.location.origin}/auth/callback`
-      : `${window.location.origin}/auth/callback`;
+    try {
+      // 開発環境と本番環境で適切なリダイレクトURLを設定
+      const redirectTo = process.env.NODE_ENV === 'production' 
+        ? `${window.location.origin}/auth/callback`
+        : `http://localhost:5173/auth/callback`;
 
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
-    });
-    return { data, error };
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return { data: null, error };
+    }
   },
 
   updatePassword: async (password: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      password,
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Update password error:', error);
+      return { data: null, error };
+    }
   },
 };
 
